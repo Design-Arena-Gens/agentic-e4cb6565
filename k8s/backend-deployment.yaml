@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: def-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: def-backend
+  template:
+    metadata:
+      labels:
+        app: def-backend
+    spec:
+      containers:
+        - name: backend
+          image: registry.example.com/def/backend:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: MONGODB_URI
+              value: mongodb://def-mongo:27017/def
+            - name: POSTGRES_URI
+              value: postgresql+asyncpg://def:def@def-postgres:5432/def
+            - name: REDIS_URL
+              value: redis://def-redis:6379/0
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: def-kafka:9092
+            - name: WEB3_RPC_URL
+              value: http://def-ganache:8545
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: def-backend
+spec:
+  type: ClusterIP
+  selector:
+    app: def-backend
+  ports:
+    - port: 8000
+      targetPort: 8000

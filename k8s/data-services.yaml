@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: def-mongo
+spec:
+  serviceName: "def-mongo"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: def-mongo
+  template:
+    metadata:
+      labels:
+        app: def-mongo
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:7
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: mongo-data
+              mountPath: /data/db
+  volumeClaimTemplates:
+    - metadata:
+        name: mongo-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: def-mongo
+spec:
+  clusterIP: None
+  selector:
+    app: def-mongo
+  ports:
+    - port: 27017
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: def-postgres
+spec:
+  serviceName: "def-postgres"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: def-postgres
+  template:
+    metadata:
+      labels:
+        app: def-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          env:
+            - name: POSTGRES_USER
+              value: def
+            - name: POSTGRES_PASSWORD
+              value: def
+            - name: POSTGRES_DB
+              value: def
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 20Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: def-postgres
+spec:
+  clusterIP: None
+  selector:
+    app: def-postgres
+  ports:
+    - port: 5432
